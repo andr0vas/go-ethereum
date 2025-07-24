@@ -17,8 +17,8 @@ type PrivateKeyKeeper interface {
 	Sign(data []byte, prvID []byte) ([]byte, error)
 }
 
-// Default realized interface PrivateKeyKeeper without hiding the private key
-var Default PrivateKeyKeeper = &defaultPrivateKeyKeeper{}
+// defaultKeeper realized interface PrivateKeyKeeper without hiding the private key
+var defaultKeeper PrivateKeyKeeper = &defaultPrivateKeyKeeper{}
 
 type defaultPrivateKeyKeeper struct {
 }
@@ -56,9 +56,20 @@ func (a *defaultPrivateKeyKeeper) Sign(data []byte, prvID []byte) ([]byte, error
 	return sig, nil
 }
 
-func SignByAdapter(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
+type SecureSign struct {
+	keeper PrivateKeyKeeper
+}
+
+func (a *SecureSign) SetKeeper(keeper PrivateKeyKeeper) {
+	a.keeper = keeper
+}
+
+func (a *SecureSign) Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
+	if a.keeper == nil {
+		a.keeper = defaultKeeper
+	}
 	h := s.Hash(tx)
-	sig, err := Default.Sign(h[:], prvID)
+	sig, err := a.keeper.Sign(h[:], prvID)
 	if err != nil {
 		return nil, err
 	}

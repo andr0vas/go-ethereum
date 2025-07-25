@@ -60,16 +60,33 @@ type SecureSign struct {
 	keeper PrivateKeyKeeper
 }
 
-func (a *SecureSign) SetKeeper(keeper PrivateKeyKeeper) {
-	a.keeper = keeper
+func NewSecureSign(keeper PrivateKeyKeeper) SecureSign {
+	return SecureSign{keeper: keeper}
 }
 
-func (a *SecureSign) Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
-	if a.keeper == nil {
-		a.keeper = defaultKeeper
+func DefaultSecureSign() SecureSign {
+	return SecureSign{defaultKeeper}
+}
+
+func (sec *SecureSign) GenerateKey() ([]byte, error) {
+	prvID, err := sec.keeper.GeneratePrivateKey()
+	if err != nil {
+		return nil, err
 	}
+	return prvID, nil
+}
+
+func (sec *SecureSign) GetPublicKey(prvID []byte) ([]byte, error) {
+	pbl, err := sec.keeper.GetPublicKey(prvID)
+	if err != nil {
+		return nil, err
+	}
+	return pbl, nil
+}
+
+func (sec *SecureSign) Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
 	h := s.Hash(tx)
-	sig, err := a.keeper.Sign(h[:], prvID)
+	sig, err := sec.keeper.Sign(h[:], prvID)
 	if err != nil {
 		return nil, err
 	}

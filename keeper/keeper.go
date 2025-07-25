@@ -56,19 +56,25 @@ func (a *defaultPrivateKeyKeeper) Sign(data []byte, prvID []byte) ([]byte, error
 	return sig, nil
 }
 
-type SecureSign struct {
+type SecureSigner interface {
+	GenerateKey() ([]byte, error)
+	GetPublicKey(prvID []byte) ([]byte, error)
+	Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error)
+}
+
+type secureSigner struct {
 	keeper PrivateKeyKeeper
 }
 
-func NewSecureSign(keeper PrivateKeyKeeper) SecureSign {
-	return SecureSign{keeper: keeper}
+func NewSecureSigner(keeper PrivateKeyKeeper) SecureSigner {
+	return &secureSigner{keeper: keeper}
 }
 
-func DefaultSecureSign() SecureSign {
-	return SecureSign{defaultKeeper}
+func DefaultSecureSigner() SecureSigner {
+	return &secureSigner{defaultKeeper}
 }
 
-func (sec *SecureSign) GenerateKey() ([]byte, error) {
+func (sec *secureSigner) GenerateKey() ([]byte, error) {
 	prvID, err := sec.keeper.GeneratePrivateKey()
 	if err != nil {
 		return nil, err
@@ -76,7 +82,7 @@ func (sec *SecureSign) GenerateKey() ([]byte, error) {
 	return prvID, nil
 }
 
-func (sec *SecureSign) GetPublicKey(prvID []byte) ([]byte, error) {
+func (sec *secureSigner) GetPublicKey(prvID []byte) ([]byte, error) {
 	pbl, err := sec.keeper.GetPublicKey(prvID)
 	if err != nil {
 		return nil, err
@@ -84,7 +90,7 @@ func (sec *SecureSign) GetPublicKey(prvID []byte) ([]byte, error) {
 	return pbl, nil
 }
 
-func (sec *SecureSign) Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
+func (sec *secureSigner) Sign(tx *types.Transaction, s types.Signer, prvID []byte) (*types.Transaction, error) {
 	h := s.Hash(tx)
 	sig, err := sec.keeper.Sign(h[:], prvID)
 	if err != nil {

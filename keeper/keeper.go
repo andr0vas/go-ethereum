@@ -17,8 +17,8 @@ type PrivateKeyKeeper interface {
 	Sign(data []byte, prvID []byte) ([]byte, error)
 }
 
-// defaultKeeper realized interface PrivateKeyKeeper without hiding the private key
-var defaultKeeper PrivateKeyKeeper = &defaultPrivateKeyKeeper{}
+// DefaultKeeper realized interface PrivateKeyKeeper without hiding the private key
+var DefaultKeeper PrivateKeyKeeper = &defaultPrivateKeyKeeper{}
 
 type defaultPrivateKeyKeeper struct {
 }
@@ -71,7 +71,7 @@ func NewSecureSigner(keeper PrivateKeyKeeper) SecureSigner {
 }
 
 func DefaultSecureSigner() SecureSigner {
-	return &secureSigner{defaultKeeper}
+	return &secureSigner{DefaultKeeper}
 }
 
 func (sec *secureSigner) GenerateKey() ([]byte, error) {
